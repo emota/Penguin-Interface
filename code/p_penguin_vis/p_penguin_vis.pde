@@ -14,7 +14,8 @@ void setup(){
 
   //////////// SERIAL PORT ///////////
   println(Serial.list());  // prints a list of the serial ports
-  penguinPort = new Serial(this, "/dev/cu.RN42-E59C-SPP", 115200);  ///// BLUETOOTH /////
+  penguinPort = new Serial(this, "/dev/tty.RN42-E59C-SPP", 115200);  ///// BLUETOOTH /////  
+  //penguinPort = new Serial(this, "/dev/cu.RN42-E59C-SPP", 115200);  ///// BLUETOOTH /////
   //penguinPort = new Serial(this, "/dev/tty.usbserial-A900fwsd", 9600);  ///// FTDI /////
   penguinPort.clear();
   penguinPort.bufferUntil('\n');  // don't generate a serialEvent() until you get a newline (\n) byte
