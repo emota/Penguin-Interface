@@ -1,8 +1,250 @@
+// Penguin Interface code for sending keystrokes from arduino to computer via HID bluetooth module
+// project page >> http://www.plusea.at/?page_id=2700
+
+#include "pitches.h"
+
+//////////
+// PINS //
+//////////
+
+// INPUTS
+int rBendPin = A0;  // analog
+int lBendPin = A1;  // analog
+int squeezePin = A2;  // analog
+int xPin = A3;  // analog
+int yPin = A4;  // analog
+int zPin = A5;  // analog
+int tilt1Pin = 7;  // digital
+int tilt2Pin = 8;  // digital
+int strokePin;  // digital
+int beakPin;  // digital
+int inputs[] = {
+  A0,A1,A2,A3,A4,A5,7,8};  //8
+int pullups[] = {
+  14,15,16,17,18,19,7,8};  //8
+
+// OUTPUTS
+int rLEDPin = 6; // PWM
+int gLEDPin = 5; // PWM
+int bLEDPin = 3; // PWM
+int speakerPin = 4;
+int vibePin = 9; // PWM
+int outputs[] = {
+  5,6,3,4,9};  //5
+
+//////////
+// WIFI //
+//////////
+int WiFlyPin1 = 10;
+int WiFlyPin2 = 11;
+int WiFlyPin3 = 12;
+int WiFlyPin4 = 13;
+
+////////////
+// INPUTS //
+////////////
+// INCOMING VALUES
+int rBend, lBend, squeeze, tilt1, tilt2, x, y, z;
+int rightBendAmount, leftBendAmount, squeezeAmount, tiltDirection;
+byte inByte;
+// THRESHOLDS
+int rBendMax = 500;
+int rBendMin = 100;
+int lBendMax = 500;
+int lBendMin = 100;
+int squeezeMax = 160;
+int squeezeMin = 100;
+
+///////////
+// SOUND //
+///////////
+// notes in the melody:
+int melody[] = {
+  NOTE_C4, NOTE_G3,NOTE_G3, NOTE_A3, NOTE_G3,0, NOTE_B3, NOTE_C4};
+// note durations: 4 = quarter note, 8 = eighth note, etc.:
+int noteDurations[] = {
+  4, 8, 8, 4,4,4,4,4 };
+
+///////////
+// LIGHT //
+///////////
+int rgb;  //for keeping track of LED light colour
+
+//////////
+// KEYS //
+//////////
+byte right = 0x07;
+byte left = 0x0B;
+byte up = 0x0E;
+byte down = 0x0C;
+byte enter = 0x0D;
+int keyDelay = 500;  //number of milli-seconds between key presses when key pressed
+int u,d,r,l,e;  //for keeping track of keyDelay time
+
+
+
+
+
+
+///////////
+// SETUP //
+///////////
 void setup() {
-Serial.begin(9600);
+  for(int i = 0; i < 5; i++){
+    pinMode(outputs[i],OUTPUT);
+  }
+
+  for(int i = 0; i < 8; i++){
+    pinMode(inputs[i],INPUT);
+  }
+
+  for(int i = 0; i < 8; i++){
+    digitalWrite(pullups[i],HIGH);
+  }
+
+  Serial.begin(115200);
+  noTone(speakerPin);
 }
 
+
+
+
+
+
+//////////
+// LOOP //
+//////////
 void loop() {
-Serial.println('H');
-delay(1000);
+
+  // read input pins and assign incoming values to variables
+  rBend = analogRead(rBendPin);
+  lBend = analogRead(lBendPin);
+  squeeze = analogRead(squeezePin);
+  x = analogRead(xPin);
+  y = analogRead(yPin);
+  z = analogRead(zPin);
+  tilt1 = digitalRead(tilt1Pin);
+  tilt2 = digitalRead(tilt2Pin);
+
+  // tilt upright --> neutral
+  if(tilt1 == 0 && tilt2 == 0) {  // reset delay time variables
+    u = 0;
+    d = 0;
+    r = 0;
+    l = 0;
+  }
+
+  // tilt back --> down
+  if(tilt1 == 1 && tilt2 == 1) {
+    if(d == 0 || d % keyDelay == 0) {  // key pressed every keyDelay milli-seconds
+      Serial.write(down);
+      delay(25);
+    }
+    d++;
+  }
+
+  // tilt right --> right
+  if(tilt1 == 1 && tilt2 == 0) {
+    if(r == 0 || r % keyDelay == 0) {
+      Serial.write(right);
+      delay(25);
+    }
+    r++;
+  } 
+
+  // tilt left --> left
+  if(tilt1 == 0 && tilt2 == 1) {
+    if(l == 0 || l % keyDelay == 0) {
+      Serial.write(left);
+      delay(25);
+    }
+    l++;
+  }
+
+  // squeeze or bend both wings --> up
+  if(rBend < 200 && lBend << 200) {
+    if(u == 0 || u % keyDelay == 0) {
+      Serial.write(up);
+      delay(25);
+    }
+    u++;
+  }
+
+  // squeeze or bend right wing only --> vibration on
+  if(rBend < 200 && lBend > 400) {
+    analogWrite(vibePin, 255);
+  }
+  else analogWrite(vibePin, 0);
+
+  // squeeze or bend left wing only --> play melody
+  if(lBend < 200 && rBend > 400) {
+    play(1);
+  }
+  else noTone(speakerPin);
+
+  // SQUEEZE AMOUNT // 
+  if(squeeze < 900 && e == 1) { 
+    e = 0;  //key is only pressed once
+    rgb++;
+    if(rgb > 3) rgb = 0;
+    Serial.write(enter);
+  }
+  else e = 1;
+
+  // LED red
+  if(rgb == 0) {  
+    analogWrite(rLEDPin, 255);
+    analogWrite(gLEDPin, 0);
+    analogWrite(bLEDPin, 0);
+  }
+
+  // LED green
+  if(rgb == 1) {  
+    analogWrite(rLEDPin, 0);
+    analogWrite(gLEDPin, 255);
+    analogWrite(bLEDPin, 0);
+  }
+
+  // LED blue
+  if(rgb == 2) {  
+    analogWrite(rLEDPin, 0);
+    analogWrite(gLEDPin, 0);
+    analogWrite(bLEDPin, 255);
+  }
+
+  // LED white
+  if(rgb == 3) {  
+    analogWrite(rLEDPin, 255);
+    analogWrite(gLEDPin, 255);
+    analogWrite(bLEDPin, 255);
+  }
+
+}
+
+
+
+
+
+
+
+///////////
+// SOUND //
+///////////
+void play(int vol) {
+  int volume = vol;
+  for (int thisNote = 0; thisNote < 8; thisNote++) {
+
+    // to calculate the note duration, take one second 
+    // divided by the note type.
+    //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
+    int noteDuration = 1000/noteDurations[thisNote];
+    tone(speakerPin, volume*melody[thisNote],noteDuration);
+
+    // to distinguish the notes, set a minimum time between them.
+    // the note's duration + 30% seems to work well:
+    int pauseBetweenNotes = noteDuration * 1.30;
+    delay(pauseBetweenNotes);
+    // stop the tone playing:
+    inByte = 'n';
+  }
 }
