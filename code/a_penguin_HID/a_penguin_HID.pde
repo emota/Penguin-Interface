@@ -13,8 +13,8 @@ int squeezeThreshold = 900; // sensor value needs to go bellow this value to tri
 int rightWingThresholdMIN = 200; // sensor value needs to go bellow this value to trigger
 int rightWingThresholdMAX = 400; // sensor value needs to stay above this value not to trigger
 
-int leftWingThresholdMIN = 200: // sensor value needs to go bellow this value to trigger
-int leftWingThresholdMAX = 400: // sensor value needs to stay above this value not to trigger
+int leftWingThresholdMIN = 200; // sensor value needs to go bellow this value to trigger
+int leftWingThresholdMAX = 400; // sensor value needs to stay above this value not to trigger
 
 //////////
 // PINS //
@@ -142,7 +142,7 @@ void loop() {
   if(tilt1 == 1 && tilt2 == 1) {
     if(d == 0 || d % keyDelay == 0) {  // key pressed every keyDelay milli-seconds
       Serial.write(down);
-      delay(25);
+      delay(25); // must delay 25 milli-seconds after each keypress!
     }
     d++;
   }
@@ -151,7 +151,7 @@ void loop() {
   if(tilt1 == 1 && tilt2 == 0) {
     if(r == 0 || r % keyDelay == 0) {
       Serial.write(right);
-      delay(25);
+      delay(25); // must delay 25 milli-seconds after each keypress!
     }
     r++;
   } 
@@ -160,7 +160,7 @@ void loop() {
   if(tilt1 == 0 && tilt2 == 1) {
     if(l == 0 || l % keyDelay == 0) {
       Serial.write(left);
-      delay(25);
+      delay(25); // must delay 25 milli-seconds after each keypress!
     }
     l++;
   }
@@ -169,7 +169,7 @@ void loop() {
   if(rBend < rightWingThresholdMIN && lBend << leftWingThresholdMIN) {
     if(u == 0 || u % keyDelay == 0) {
       Serial.write(up);
-      delay(25);
+      delay(25); // must delay 25 milli-seconds after each keypress!
     }
     u++;
   }
@@ -186,14 +186,14 @@ void loop() {
   }
   else noTone(speakerPin);
 
-  // SQUEEZE AMOUNT
+  // Squeeze --> enter and LED colour
   if(squeeze < squeezeThreshold && e == 1) { 
     e = 0;  //key is only pressed once
     rgb++;
-    if(rgb > 3) rgb = 0;
     Serial.write(enter);
+    delay(25); // must delay 25 milli-seconds after each keypress!
   }
-  else e = 1;
+  if(squeeze > squeezeThreshold) e = 1;
 
   // LED red
   if(rgb == 0) {  
@@ -222,7 +222,7 @@ void loop() {
     analogWrite(gLEDPin, 255);
     analogWrite(bLEDPin, 255);
   }
-
+  if(rgb > 3) rgb = 0;
 }
 
 
@@ -252,3 +252,4 @@ void play(int vol) {
     inByte = 'n';
   }
 }
+
