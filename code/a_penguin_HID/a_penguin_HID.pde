@@ -3,10 +3,22 @@
 
 #include "pitches.h"
 
+////////////////////////
+// EDITABLE VARIABLES //
+////////////////////////
+int keyDelay = 500;  //number of milli-seconds between key presses when key pressed
+
+int squeezeThreshold = 900; // sensor value needs to go bellow this value to trigger
+
+int rightWingThresholdMIN = 200; // sensor value needs to go bellow this value to trigger
+int rightWingThresholdMAX = 400; // sensor value needs to stay above this value not to trigger
+
+int leftWingThresholdMIN = 200: // sensor value needs to go bellow this value to trigger
+int leftWingThresholdMAX = 400: // sensor value needs to stay above this value not to trigger
+
 //////////
 // PINS //
 //////////
-
 // INPUTS
 int rBendPin = A0;  // analog
 int lBendPin = A1;  // analog
@@ -47,13 +59,6 @@ int WiFlyPin4 = 13;
 int rBend, lBend, squeeze, tilt1, tilt2, x, y, z;
 int rightBendAmount, leftBendAmount, squeezeAmount, tiltDirection;
 byte inByte;
-// THRESHOLDS
-int rBendMax = 500;
-int rBendMin = 100;
-int lBendMax = 500;
-int lBendMin = 100;
-int squeezeMax = 160;
-int squeezeMin = 100;
 
 ///////////
 // SOUND //
@@ -78,7 +83,6 @@ byte left = 0x0B;
 byte up = 0x0E;
 byte down = 0x0C;
 byte enter = 0x0D;
-int keyDelay = 500;  //number of milli-seconds between key presses when key pressed
 int u,d,r,l,e;  //for keeping track of keyDelay time
 
 
@@ -162,7 +166,7 @@ void loop() {
   }
 
   // squeeze or bend both wings --> up
-  if(rBend < 200 && lBend << 200) {
+  if(rBend < rightWingThresholdMIN && lBend << leftWingThresholdMIN) {
     if(u == 0 || u % keyDelay == 0) {
       Serial.write(up);
       delay(25);
@@ -171,19 +175,19 @@ void loop() {
   }
 
   // squeeze or bend right wing only --> vibration on
-  if(rBend < 200 && lBend > 400) {
+  if(rBend < rightWingThresholdMIN && lBend > leftWingThresholdMAX) {
     analogWrite(vibePin, 255);
   }
   else analogWrite(vibePin, 0);
 
   // squeeze or bend left wing only --> play melody
-  if(lBend < 200 && rBend > 400) {
+  if(lBend < leftWingThresholdMIN && rBend > rightWingThresholdMAX) {
     play(1);
   }
   else noTone(speakerPin);
 
-  // SQUEEZE AMOUNT // 
-  if(squeeze < 900 && e == 1) { 
+  // SQUEEZE AMOUNT
+  if(squeeze < squeezeThreshold && e == 1) { 
     e = 0;  //key is only pressed once
     rgb++;
     if(rgb > 3) rgb = 0;
