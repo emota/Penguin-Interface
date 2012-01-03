@@ -6,7 +6,8 @@
 ////////////////////////
 // EDITABLE VARIABLES //
 ////////////////////////
-int keyDelay = 500;  //number of milli-seconds between key presses when key pressed
+int keyDelay = 500;  // number of milli-seconds between key presses when key pressed
+int lightDelay = 1400;  // number of milli-seconds between LED light colours
 
 int squeezeThreshold = 900; // sensor value needs to go bellow this value to trigger
 
@@ -74,6 +75,7 @@ int noteDurations[] = {
 // LIGHT //
 ///////////
 int rgb;  //for keeping track of LED light colour
+int light;  //for keeping track ot LED colour change timing
 
 //////////
 // KEYS //
@@ -174,11 +176,87 @@ void loop() {
     u++;
   }
 
-  // squeeze or bend right wing only --> vibration on
-  if(rBend < rightWingThresholdMIN && lBend > leftWingThresholdMAX) {
+  // Squeeze --> press enter key and vibrate
+  if(squeeze < squeezeThreshold){
     analogWrite(vibePin, 255);
   }
-  else analogWrite(vibePin, 0);
+  if(squeeze < squeezeThreshold && e == 1) {
+    e = 0;  //key is only pressed once
+    Serial.write(enter);
+    delay(25); // must delay 25 milli-seconds after each keypress!
+  }
+  if(squeeze > squeezeThreshold) {
+    e = 1;
+    analogWrite(vibePin, 0);
+  }
+
+  // squeeze or bend right wing only --> toggle through LED colours
+  if(rBend < rightWingThresholdMIN && lBend > leftWingThresholdMAX) {
+    if(light == 0 || light % lightDelay == 0) {
+      rgb++;
+    }
+    light++;
+  }
+  else {
+    light = 0;
+    rgb = 0;
+    analogWrite(rLEDPin, 0);
+    analogWrite(gLEDPin, 0);
+    analogWrite(bLEDPin, 0);
+  }
+
+  // LED red
+  if(rgb == 1) {
+    analogWrite(rLEDPin, 255);
+    analogWrite(gLEDPin, 0);
+    analogWrite(bLEDPin, 0);
+  }
+
+  // LED red and green
+  if(rgb == 2) {
+    analogWrite(rLEDPin, 150);
+    analogWrite(gLEDPin, 255);
+    analogWrite(bLEDPin, 0);
+  }
+
+  // LED green
+  if(rgb == 3) {
+    analogWrite(rLEDPin, 0);
+    analogWrite(gLEDPin, 255);
+    analogWrite(bLEDPin, 0);
+  }
+
+  // LED green and blue
+  if(rgb == 4) {
+    analogWrite(rLEDPin, 0);
+    analogWrite(gLEDPin, 255);
+    analogWrite(bLEDPin, 255);
+  }
+
+  // LED blue
+  if(rgb == 5) {
+    analogWrite(rLEDPin, 0);
+    analogWrite(gLEDPin, 0);
+    analogWrite(bLEDPin, 255);
+  }
+
+  // LED blue and red
+  if(rgb == 6) {
+    analogWrite(rLEDPin, 150);
+    analogWrite(gLEDPin, 0);
+    analogWrite(bLEDPin, 255);
+  }
+
+  // LED white
+  if(rgb == 7) {
+    analogWrite(rLEDPin, 255);
+    analogWrite(gLEDPin, 255);
+    analogWrite(bLEDPin, 255);
+  }
+
+  if(rgb > 7) rgb = 0;
+
+
 
   // squeeze or bend left wing only --> play melody
   if(lBend < leftWingThresholdMIN && rBend > rightWingThresholdMAX) {
@@ -186,43 +264,13 @@ void loop() {
   }
   else noTone(speakerPin);
 
-  // Squeeze --> enter and LED colour
-  if(squeeze < squeezeThreshold && e == 1) { 
-    e = 0;  //key is only pressed once
-    rgb++;
-    Serial.write(enter);
-    delay(25); // must delay 25 milli-seconds after each keypress!
-  }
-  if(squeeze > squeezeThreshold) e = 1;
 
-  // LED red
-  if(rgb == 0) {  
-    analogWrite(rLEDPin, 255);
-    analogWrite(gLEDPin, 0);
-    analogWrite(bLEDPin, 0);
-  }
 
-  // LED green
-  if(rgb == 1) {  
-    analogWrite(rLEDPin, 0);
-    analogWrite(gLEDPin, 255);
-    analogWrite(bLEDPin, 0);
-  }
 
-  // LED blue
-  if(rgb == 2) {  
-    analogWrite(rLEDPin, 0);
-    analogWrite(gLEDPin, 0);
-    analogWrite(bLEDPin, 255);
-  }
 
-  // LED white
-  if(rgb == 3) {  
-    analogWrite(rLEDPin, 255);
-    analogWrite(gLEDPin, 255);
-    analogWrite(bLEDPin, 255);
-  }
-  if(rgb > 3) rgb = 0;
+
+
+
 }
 
 
@@ -252,4 +300,9 @@ void play(int vol) {
     inByte = 'n';
   }
 }
+
+
+
+
+
 
