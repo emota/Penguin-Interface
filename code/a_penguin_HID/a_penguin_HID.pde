@@ -7,7 +7,7 @@
 ////////////////////////
 // EDITABLE VARIABLES //
 ////////////////////////
-boolean consoleMode = true;
+boolean consoleMode = false;
 boolean debugAccel = consoleMode && false;
 
 int keyDelay = 3000;  // number of milli-seconds between key presses when key pressed
@@ -164,9 +164,9 @@ void loop() {
   */
 
 
-  vibeAndKey(enter, &e, squeeze < squeezeThreshold);
+  //vibeAndKey(enter, &e, squeeze < squeezeThreshold);
 
-  cycleLedColors(rBend < rightWingThresholdMIN && lBend > leftWingThresholdMAX);
+  //cycleLedColors(rBend < rightWingThresholdMIN && lBend > leftWingThresholdMAX);
 }
 
 
