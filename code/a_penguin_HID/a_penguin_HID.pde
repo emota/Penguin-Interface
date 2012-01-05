@@ -1,12 +1,16 @@
 // Penguin Interface code for sending keystrokes from arduino to computer via HID bluetooth module
 // project page >> http://www.plusea.at/?page_id=2700
 
+#include <stdarg.h>
 #include "pitches.h"
 
 ////////////////////////
 // EDITABLE VARIABLES //
 ////////////////////////
-int keyDelay = 500;  // number of milli-seconds between key presses when key pressed
+boolean consoleMode = false;
+boolean debugAccel = consoleMode && false;
+
+int keyDelay = 3000;  // number of milli-seconds between key presses when key pressed
 int lightDelay = 1400;  // number of milli-seconds between LED light colours
 
 int squeezeThreshold = 900; // sensor value needs to go bellow this value to trigger
@@ -80,16 +84,17 @@ int light;  //for keeping track ot LED colour change timing
 //////////
 // KEYS //
 //////////
-byte right = 0x07;
-byte left = 0x0B;
-byte up = 0x0E;
-byte down = 0x0C;
-byte enter = 0x0D;
-int u,d,r,l,e;  //for keeping track of keyDelay time
+byte right = consoleMode ? 'r' : 0x07;
+byte left = consoleMode ? 'l' : 0x0B;
+byte up = consoleMode ? 'u' : 0x0E;
+byte down = consoleMode ? 'd' : 0x0C;
+byte enter = consoleMode ? 'N' : 0x0D;
+byte one = '1';
+int u,d,r,l,e,o;  //for keeping track of keyDelay time
 
 
 
-
+void printfmt(char *fmt, ... );
 
 
 ///////////
@@ -132,13 +137,18 @@ void loop() {
   tilt1 = digitalRead(tilt1Pin);
   tilt2 = digitalRead(tilt2Pin);
 
+  if(debugAccel) {
+    printfmt("x,y,z=(%i, %i, %i)\n", x, y, z);
+  }
+
+
   // tilt upright --> neutral
   if(tilt1 == 0 && tilt2 == 0) {  // reset delay time variables
-    d = 0;
     r = 0;
     l = 0;
   }
 
+/*
   // tilt back --> down
   if(tilt1 == 1 && tilt2 == 1) {
     if(d == 0 || d % keyDelay == 0) {  // key pressed every keyDelay milli-seconds
@@ -147,28 +157,20 @@ void loop() {
     }
     d++;
   }
-
-  // tilt right --> right
-  if(tilt1 == 1 && tilt2 == 0) {
-    if(r == 0 || r % keyDelay == 0) {
-      Serial.write(right);
+  */
+  
+  if((tilt1 == 0 || tilt2 == 0) && y < 640) {
+    if(d == 0 || d % keyDelay == 0) {  // key pressed every keyDelay milli-seconds
+      Serial.write(down);
       delay(25); // must delay 25 milli-seconds after each keypress!
     }
-    r++;
-  } 
-
-  // tilt left --> left
-  if(tilt1 == 0 && tilt2 == 1) {
-    if(l == 0 || l % keyDelay == 0) {
-      Serial.write(left);
-      delay(25); // must delay 25 milli-seconds after each keypress!
-    }
-    l++;
+    d++;
+  } else {
+    d = 0;
   }
-
-  // squeeze or bend both wings --> up
-  if(rBend < rightWingThresholdMIN && lBend << leftWingThresholdMIN) {
-    if(u == 0 || u % keyDelay == 0) {
+  
+  if((tilt1 == 0 || tilt2 == 0) && y > 830) {
+    if(u == 0 || u % keyDelay == 0) {  // key pressed every keyDelay milli-seconds
       Serial.write(up);
       delay(25); // must delay 25 milli-seconds after each keypress!
     }
@@ -177,6 +179,39 @@ void loop() {
     u = 0;
   }
 
+
+  // tilt right --> right
+  if(tilt1 == 1 && tilt2 == 0 && y > 640 && y < 830) {
+    if(r == 0 || r % keyDelay == 0) {
+      Serial.write(right);
+      delay(25); // must delay 25 milli-seconds after each keypress!
+    }
+    r++;
+  } 
+
+  // tilt left --> left
+  if(tilt1 == 0 && tilt2 == 1 && y > 640 && y < 830) {
+    if(l == 0 || l % keyDelay == 0) {
+      Serial.write(left);
+      delay(25); // must delay 25 milli-seconds after each keypress!
+    }
+    l++;
+  }
+
+/*
+  // squeeze or bend both wings --> up
+  if(rBend < rightWingThresholdMIN && lBend < leftWingThresholdMIN) {
+    if(u == 0 || u % keyDelay == 0) {
+      Serial.write(up);
+      delay(25); // must delay 25 milli-seconds after each keypress!
+    }
+    u++;
+  } else {
+    u = 0;
+  }
+*/
+
+/*
   // Squeeze --> press enter key and vibrate
   if(squeeze < squeezeThreshold){
     analogWrite(vibePin, 255);
@@ -186,11 +221,36 @@ void loop() {
     Serial.write(enter);
     delay(25); // must delay 25 milli-seconds after each keypress!
   }
+  
   if(squeeze > squeezeThreshold) {
     e = 1;
     analogWrite(vibePin, 0);
   }
+*/
 
+
+
+  if(lBend < leftWingThresholdMIN && rBend > rightWingThresholdMAX) {
+    if(e == 0 || e % keyDelay == 0) {
+      Serial.write(enter);
+      delay(25); // must delay 25 milli-seconds after each keypress!
+    }
+    e++;
+  } else {
+    e = 0; 
+  }
+  
+  if(rBend < rightWingThresholdMIN && lBend > leftWingThresholdMAX) {
+    if(o == 0 || o % keyDelay == 0) {
+      Serial.write(one);
+      delay(25); // must delay 25 milli-seconds after each keypress!
+    }
+    o++;
+  } else {
+    o = 0; 
+  }
+
+/*
   // squeeze or bend right wing only --> toggle through LED colours
   if(rBend < rightWingThresholdMIN && lBend > leftWingThresholdMAX) {
     if(light == 0 || light % lightDelay == 0) {
@@ -256,16 +316,16 @@ void loop() {
   }
 
   if(rgb > 7) rgb = 0;
+*/
 
 
-
+  /*
   // squeeze or bend left wing only --> play melody
   if(lBend < leftWingThresholdMIN && rBend > rightWingThresholdMAX) {
     play(1);
   }
   else noTone(speakerPin);
-
-
+  */
 
 
 
@@ -303,6 +363,14 @@ void play(int vol) {
 }
 
 
+void printfmt(char *fmt, ... ){
+        char tmp[128]; // resulting string limited to 128 chars
+        va_list args;
+        va_start (args, fmt );
+        vsnprintf(tmp, 128, fmt, args);
+        va_end (args);
+        Serial.print(tmp);
+}
 
 
 
