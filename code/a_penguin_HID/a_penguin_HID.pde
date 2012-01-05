@@ -7,7 +7,7 @@
 ////////////////////////
 // EDITABLE VARIABLES //
 ////////////////////////
-boolean consoleMode = false;
+boolean consoleMode = true;
 boolean debugAccel = consoleMode && false;
 
 int keyDelay = 3000;  // number of milli-seconds between key presses when key pressed
@@ -119,6 +119,7 @@ void setup() {
 
 
 
+void printfmt(char *fmt, ... );
 
 
 
@@ -127,6 +128,49 @@ void setup() {
 //////////
 void loop() {
 
+  readInput();
+
+  // tilt back --> down (using only tilt)
+  //repeatKey(down, &d, tilt1 == 1 && tilt2 == 1);
+  
+  // tilt forward --> down (using acceleration)
+  repeatKey(down, &d, (tilt1 == 0 || tilt2 == 0) && y < 640);
+  
+  // tilt back --> up (using acceleration)
+  repeatKey(up, &u, (tilt1 == 0 || tilt2 == 0) && y > 830);
+  
+  // squeeze or bend both wings --> up
+  //repeatKey(up, &u, rBend < rightWingThresholdMIN && lBend < leftWingThresholdMIN);
+
+
+  // tilt right --> right
+  repeatKey(right, &r, tilt1 == 1 && tilt2 == 0 && y > 640 && y < 830);
+  
+  // tilt left --> left
+  repeatKey(left, &l, tilt1 == 0 && tilt2 == 1 && y > 640 && y < 830);
+
+
+
+  repeatKey(enter, &e, lBend < leftWingThresholdMIN && rBend > rightWingThresholdMAX);
+  repeatKey(one, &o, rBend < rightWingThresholdMIN && lBend > leftWingThresholdMAX);
+
+
+  /*
+  // squeeze or bend left wing only --> play melody
+  if(lBend < leftWingThresholdMIN && rBend > rightWingThresholdMAX) {
+    play(1);
+  }
+  else noTone(speakerPin);
+  */
+
+
+  vibeAndKey(enter, &e, squeeze < squeezeThreshold);
+
+  cycleLedColors(rBend < rightWingThresholdMIN && lBend > leftWingThresholdMAX);
+}
+
+
+void readInput() {
   // read input pins and assign incoming values to variables
   rBend = analogRead(rBendPin);
   lBend = analogRead(lBendPin);
@@ -139,120 +183,46 @@ void loop() {
 
   if(debugAccel) {
     printfmt("x,y,z=(%i, %i, %i)\n", x, y, z);
-  }
-
-
-  // tilt upright --> neutral
-  if(tilt1 == 0 && tilt2 == 0) {  // reset delay time variables
-    r = 0;
-    l = 0;
-  }
-
-/*
-  // tilt back --> down
-  if(tilt1 == 1 && tilt2 == 1) {
-    if(d == 0 || d % keyDelay == 0) {  // key pressed every keyDelay milli-seconds
-      Serial.write(down);
-      delay(25); // must delay 25 milli-seconds after each keypress!
-    }
-    d++;
-  }
-  */
-  
-  if((tilt1 == 0 || tilt2 == 0) && y < 640) {
-    if(d == 0 || d % keyDelay == 0) {  // key pressed every keyDelay milli-seconds
-      Serial.write(down);
-      delay(25); // must delay 25 milli-seconds after each keypress!
-    }
-    d++;
-  } else {
-    d = 0;
-  }
-  
-  if((tilt1 == 0 || tilt2 == 0) && y > 830) {
-    if(u == 0 || u % keyDelay == 0) {  // key pressed every keyDelay milli-seconds
-      Serial.write(up);
-      delay(25); // must delay 25 milli-seconds after each keypress!
-    }
-    u++;
-  } else {
-    u = 0;
-  }
-
-
-  // tilt right --> right
-  if(tilt1 == 1 && tilt2 == 0 && y > 640 && y < 830) {
-    if(r == 0 || r % keyDelay == 0) {
-      Serial.write(right);
-      delay(25); // must delay 25 milli-seconds after each keypress!
-    }
-    r++;
   } 
+}
 
-  // tilt left --> left
-  if(tilt1 == 0 && tilt2 == 1 && y > 640 && y < 830) {
-    if(l == 0 || l % keyDelay == 0) {
-      Serial.write(left);
-      delay(25); // must delay 25 milli-seconds after each keypress!
-    }
-    l++;
-  }
+void vibeAndKey(byte key, int* state, boolean active) {
 
-/*
-  // squeeze or bend both wings --> up
-  if(rBend < rightWingThresholdMIN && lBend < leftWingThresholdMIN) {
-    if(u == 0 || u % keyDelay == 0) {
-      Serial.write(up);
-      delay(25); // must delay 25 milli-seconds after each keypress!
-    }
-    u++;
-  } else {
-    u = 0;
-  }
-*/
-
-/*
   // Squeeze --> press enter key and vibrate
-  if(squeeze < squeezeThreshold){
+  if(active){
     analogWrite(vibePin, 255);
   }
-  if(squeeze < squeezeThreshold && e == 1) {
-    e = 0;  //key is only pressed once
-    Serial.write(enter);
+  if(active && *state == 1) {
+    *state = 0;  //key is only pressed once
+    Serial.write(key);
     delay(25); // must delay 25 milli-seconds after each keypress!
   }
   
-  if(squeeze > squeezeThreshold) {
-    e = 1;
+  if(active) {
+    *state = 1;
     analogWrite(vibePin, 0);
   }
-*/
+}
 
 
-
-  if(lBend < leftWingThresholdMIN && rBend > rightWingThresholdMAX) {
-    if(e == 0 || e % keyDelay == 0) {
-      Serial.write(enter);
+void repeatKey(byte key, int* state, boolean active) {
+  if(active) {
+    if(*state == 0 || *state % keyDelay == 0) {
+      Serial.write(key);
       delay(25); // must delay 25 milli-seconds after each keypress!
     }
-    e++;
+    (*state)++;
   } else {
-    e = 0; 
+    *state = 0; 
   }
+}
+
+
+void cycleLedColors(boolean active) {
+  static int rgb = 0, light = 0;
   
-  if(rBend < rightWingThresholdMIN && lBend > leftWingThresholdMAX) {
-    if(o == 0 || o % keyDelay == 0) {
-      Serial.write(one);
-      delay(25); // must delay 25 milli-seconds after each keypress!
-    }
-    o++;
-  } else {
-    o = 0; 
-  }
-
-/*
   // squeeze or bend right wing only --> toggle through LED colours
-  if(rBend < rightWingThresholdMIN && lBend > leftWingThresholdMAX) {
+  if(active) {
     if(light == 0 || light % lightDelay == 0) {
       rgb++;
     }
@@ -316,27 +286,7 @@ void loop() {
   }
 
   if(rgb > 7) rgb = 0;
-*/
-
-
-  /*
-  // squeeze or bend left wing only --> play melody
-  if(lBend < leftWingThresholdMIN && rBend > rightWingThresholdMAX) {
-    play(1);
-  }
-  else noTone(speakerPin);
-  */
-
-
-
-
-
-
 }
-
-
-
-
 
 
 
