@@ -18,6 +18,9 @@ int squeezeThreshold = 900; // sensor value needs to go bellow this value to tri
 int rightWingThresholdMIN = 200; // sensor value needs to go bellow this value to trigger
 int rightWingThresholdMAX = 400; // sensor value needs to stay above this value not to trigger
 
+int forwardTileAccelThresholdMAX = 640; // sensor needs to go below this value to be considered tilting forward
+int backTiltAccelThresholdMIN = 830;  // sensor needs to go above this value to be considered tilting backward
+
 int leftWingThresholdMIN = 200; // sensor value needs to go bellow this value to trigger
 int leftWingThresholdMAX = 400; // sensor value needs to stay above this value not to trigger
 
@@ -134,20 +137,20 @@ void loop() {
   //repeatKey(down, &d, tilt1 == 1 && tilt2 == 1);
   
   // tilt forward --> down (using acceleration)
-  repeatKey(down, &d, (tilt1 == 0 || tilt2 == 0) && y < 640);
+  repeatKey(down, &d, (tilt1 == 0 || tilt2 == 0) && y < forwardTileAccelThresholdMAX);
   
   // tilt back --> up (using acceleration)
-  repeatKey(up, &u, (tilt1 == 0 || tilt2 == 0) && y > 830);
+  repeatKey(up, &u, (tilt1 == 0 || tilt2 == 0) && y > backTiltAccelThresholdMIN);
   
   // squeeze or bend both wings --> up
   //repeatKey(up, &u, rBend < rightWingThresholdMIN && lBend < leftWingThresholdMIN);
 
 
   // tilt right --> right
-  repeatKey(right, &r, tilt1 == 1 && tilt2 == 0 && y > 640 && y < 830);
+  repeatKey(right, &r, tilt1 == 1 && tilt2 == 0 && y > forwardTileAccelThresholdMAX && y < backTiltAccelThresholdMIN);
   
   // tilt left --> left
-  repeatKey(left, &l, tilt1 == 0 && tilt2 == 1 && y > 640 && y < 830);
+  repeatKey(left, &l, tilt1 == 0 && tilt2 == 1 && y > forwardTileAccelThresholdMAX && y < backTiltAccelThresholdMIN);
 
 
 
