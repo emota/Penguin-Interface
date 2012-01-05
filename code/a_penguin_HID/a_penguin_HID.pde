@@ -134,7 +134,6 @@ void loop() {
 
   // tilt upright --> neutral
   if(tilt1 == 0 && tilt2 == 0) {  // reset delay time variables
-    u = 0;
     d = 0;
     r = 0;
     l = 0;
@@ -174,6 +173,8 @@ void loop() {
       delay(25); // must delay 25 milli-seconds after each keypress!
     }
     u++;
+  } else {
+    u = 0;
   }
 
   // Squeeze --> press enter key and vibrate
