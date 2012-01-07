@@ -11,7 +11,7 @@ int keyDelay = 500;  // number of milli-seconds between key presses when key pre
 
 int fadeTime = 10;  // number of milli-seconds between colour fading
 
-int squeezeThreshold = 700; // sensor value needs to go bellow this value to trigger
+int squeezeThreshold = 900; // sensor value needs to go bellow this value to trigger
 
 //////////
 // PINS //
