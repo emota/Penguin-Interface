@@ -4,6 +4,8 @@
 #include <stdarg.h>
 #include "pitches.h"
 
+#include "LightController.h"
+
 ////////////////////////
 // EDITABLE VARIABLES //
 ////////////////////////
@@ -11,7 +13,7 @@ boolean consoleMode = false;
 boolean debugAccel = consoleMode && false;
 
 int keyDelay = 3000;  // number of milli-seconds between key presses when key pressed
-int lightDelay = 1400;  // number of milli-seconds between LED light colours
+int lightDelay = 14000;  // number of milli-seconds between LED light colours
 
 int squeezeThreshold = 900; // sensor value needs to go bellow this value to trigger
 
@@ -51,7 +53,7 @@ int speakerPin = 4;
 int vibePin = 9; // PWM
 int outputs[] = {
   5,6,3,4,9};  //5
-
+  
 //////////
 // WIFI //
 //////////
@@ -83,6 +85,10 @@ int noteDurations[] = {
 ///////////
 int rgb;  //for keeping track of LED light colour
 int light;  //for keeping track ot LED colour change timing
+
+LightController lightController ( rLEDPin, gLEDPin, bLEDPin );
+unsigned long timeToLight;
+unsigned long kDeltaMilliseconds = 100;
 
 //////////
 // KEYS //
@@ -118,6 +124,15 @@ void setup() {
 
   Serial.begin(115200);
   noTone(speakerPin);
+  
+  timeToLight = millis();
+  
+  lightController.cycleSpeed();
+  lightController.randomEffect();
+  lightController.cycleBlue();
+  lightController.cycleBright();
+
+  
 }
 
 
@@ -132,6 +147,15 @@ void printfmt(char *fmt, ... );
 void loop() {
 
   readInput();
+
+
+	unsigned long now = millis();
+	if ( timeToLight < now )
+	{
+		lightController.updateLights();
+		timeToLight = now + kDeltaMilliseconds;
+	}
+
 
   // tilt back --> down (using only tilt)
   //repeatKey(down, &d, tilt1 == 1 && tilt2 == 1);
@@ -170,6 +194,7 @@ void loop() {
   //vibeAndKey(enter, &e, squeeze < squeezeThreshold);
 
   //cycleLedColors(rBend < rightWingThresholdMIN && lBend > leftWingThresholdMAX);
+  //cycleLedColors2(true);
 }
 
 
@@ -218,6 +243,65 @@ void repeatKey(byte key, int* state, boolean active) {
   } else {
     *state = 0; 
   }
+}
+
+
+
+
+void cycleLedColors2(boolean active) {
+  static int rgb = 0, light = 0;
+  
+  // squeeze or bend right wing only --> toggle through LED colours
+  if(active) {
+    if(light == 0 || light % lightDelay == 0) {
+      rgb++;
+    }
+    light++;
+  }
+  else {
+    light = 0;
+    rgb = 0;
+    
+  }
+
+  // LED red
+  if(rgb == 1) {
+    lightController.cycleBlue();
+  }
+
+  // LED red and green
+  if(rgb == 2) {
+    lightController.cycleRed();
+  }
+
+  // LED green
+  if(rgb == 3) {
+    lightController.cycleGreen();
+  }
+
+  // LED green and blue
+  if(rgb == 4) {
+    lightController.cycleBlue();
+  }
+
+  // LED blue
+  if(rgb == 5) {
+    lightController.cycleRed();
+  }
+
+  // LED blue and red
+  if(rgb == 6) {
+    lightController.cycleGreen();
+  }
+
+  // LED white
+  if(rgb == 7) {
+    analogWrite(rLEDPin, 255);
+    analogWrite(gLEDPin, 255);
+    analogWrite(bLEDPin, 255);
+  }
+
+  if(rgb > 6) rgb = 0;
 }
 
 
