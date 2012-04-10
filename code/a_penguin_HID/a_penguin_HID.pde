@@ -118,7 +118,7 @@ void setup() {
     digitalWrite(pullups[i],HIGH);
   }
 
-  Serial.begin(115200);
+  Serial.begin(consoleMode ? 9600 : 115200);
   noTone(speakerPin);
 
 }
@@ -176,6 +176,8 @@ void loop() {
 
   //cycleLedColors(rBend < rightWingThresholdMIN && lBend > leftWingThresholdMAX);
   //cycleLedColors2(true);
+  
+  cycleLedColors(true);
 }
 
 
